@@ -19,6 +19,7 @@ body {
     background-color: var(--color-dark);
     font-size: calc(10px + 1.5vmin);
     color: var(--color-light);
+    display: flexbox;
 }
 
 header {
