@@ -31,3 +31,11 @@ header {
     align-items: center;
     justify-content: center;
 }
+
+.axis {
+    opacity: 0.4;
+}
+
+.axis:hover {
+    opacity: 1;
+}
