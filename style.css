@@ -1,0 +1,33 @@
+:root {
+    --color-light: rgb(255, 248, 241);
+    --color-dark: rgb(40, 44, 52);
+}
+
+* {
+    margin:0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Nunito Sans', sans-serif;
+    height: 100%;
+}
+
+body {
+    margin: 1em;
+    background-color: var(--color-dark);
+    font-size: calc(10px + 1.5vmin);
+    color: var(--color-light);
+}
+
+header {
+    /* font-weight: 300; */
+    flex-direction: row;
+}
+
+.main {
+    padding: 0.5em;
+    align-items: center;
+    justify-content: center;
+}
