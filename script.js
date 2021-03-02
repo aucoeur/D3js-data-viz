@@ -2,7 +2,7 @@
 let data10 = data.slice(0, 10)
 const numItems = 10;
 
-const margin = ({top: 20, right: 100, bottom: 30, left: 40})
+const margin = ({top: 20, right: 30, bottom: 30, left: 40})
 const padding = 2;
 const barHeight = 10;
 const width = 500;
@@ -104,7 +104,7 @@ function showTopTen() {
 
 function showParallelPlot() {
 
-  const colorScale = d3.scaleOrdinal()
+  const color = d3.scaleOrdinal()
     .domain(data10, (d) => d.country)
     .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"])
 
@@ -124,9 +124,9 @@ function showParallelPlot() {
 
   // Build x scale
   const x = d3.scalePoint()
-    .range([0, width])
+    .range([margin.left, width-margin.right])
     .domain(dimensions)
-    .padding(1)
+    // .padding(2)
 
   const topAxis = (d) =>
     d3.axisLeft()
@@ -150,20 +150,19 @@ function showParallelPlot() {
     .attr("viewBox", [0, 0, width, height])
 
   // Draw lines!!
-  // svg.selectAll("paths")
-  //   .data(data10)
-  //   .append("path")
-  //     .attr("d", drawPath)
-  //       .style("stroke", (d) => {
-  //         return color(d.Species)
-  //       })
+  svg.selectAll("paths")
+    .data(data10)
+    .join("path")
+      .attr("d", drawPath)
+      .attr("fill", "None")
+      .attr("stroke", (d) => {
+          return color(d.country)
+        })
 
  // Axis Groups
   d3.select("#parallelPlot")
     .append("g")
       .attr("id", "dimensions")
-      // .attr("class", "axis")
-      // .attr("stroke-width", ".5")
 
   // const g = svg.selectAll("#pAxis")
     .selectAll("g")
@@ -178,7 +177,7 @@ function showParallelPlot() {
     .append("text")
       .style("text-anchor", "middle")
       .attr("x", (d, i) => {
-        console.log(width / dimensions.length)
+        // console.log(width / dimensions.length)
         return i * (width / dimensions.length)
       })
       .attr("y", margin.top)
