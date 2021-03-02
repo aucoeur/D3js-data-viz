@@ -75,7 +75,7 @@ function showTopTen() {
     .selectAll("g")
     .data(data10)
     .join("g")
-      .attr("id", (d) => d.country)
+      .attr("class", (d) => d.country)
       .attr("transform", `translate(${margin.left}, 0)`)
 
   // Bar
@@ -108,17 +108,15 @@ function showParallelPlot() {
     .domain(data10, (d) => d.country)
     .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"])
 
+  // Create array to control order of dimensions
   const dimensions = ["score", "gdp", "support", "health", "freedom", "generosity", "corruption"]
 
   // Build linear scale for each dimension, store in y
   const y = {}
   dimensions.forEach((_, i) => {
     key = dimensions[i]
-    // console.log(key)
     y[key] = d3.scaleLinear()
-      .domain(
-        d3.extent(data10, d => d[key] )
-      )
+      .domain( d3.extent(data10, d => d[key]) )
       .range([height-margin.bottom, margin.bottom])
     })
 
@@ -126,72 +124,45 @@ function showParallelPlot() {
   const x = d3.scalePoint()
     .range([margin.left, width-margin.right])
     .domain(dimensions)
-    // .padding(2)
 
+  // Function to draw lines across dimensions
   function drawPath(d) {
     return d3.line()(
       dimensions.map(p => {
           return [x(p), y[p](d[p])] })
     )}
 
-  // function focusColor(d) {
-
-  //   // d3.select(`#paths>g:not('#pplot-${selected}')`)
-  //   d3.selectAll(`.line ${selected}'`)
-  //     .transition()
-  //       .duration(200)
-  //       .style("stroke", "lightgrey")
-  //       .style("opacity", "0.2")
-
-  //   d3.selectAll(`.${d.selected}`)
-  //     .transition()
-  //       .duration(200)
-  //       .style("stroke", (d) => color(d.selected))
-  //       .style("opacity", "1")
-  // }
-
-
-  // function resetColor(d) {
-  //   d3.selectAll(".line")
-  //     .transition()
-  //       .duration(200)
-  //       .delay(500)
-  //     .style("stroke", (d) => {
-  //       return color(d.country) })
-  //     .style("opacity", "1")
-  // }
-
-
+  // append div for this graph to main
   const div = d3.select('.main')
     .append("div")
       .attr("id", "parallel")
 
+  // add svg to this div
   const svg = div.append("svg")
     .attr("id", "parallelPlot")
     .attr("viewBox", [0, 0, width, height*2])
 
+  // Group for all paths
   d3.select("#parallelPlot")
     .append("g")
       .attr("id", "paths")
 
-const tooltip = d3.select("#tooltip")
+  // Add tooltip (outside svg)
+  const tooltip = d3.select('#parallel')
     .append("div")
-    .style("opacity", 0)
-    .attr("class", "tooltip")
-    .style("background-color", "white")
-    .style("border", "solid")
-    .style("border-width", "1px")
-    .style("border-radius", "5px")
-    .style("padding", "10px")
+      .attr("class", "tooltip")
+	      .style("position", "absolute")
+        .style("display", "none")
 
   // Draw lines!!
-  const plotLines = svg.select("#paths")
-    .selectAll("g")
+  // const plotLines = svg.select("#paths")
+  svg.selectAll("g")
     .data(data10)
     .join("g")
-      .attr("id", d => `${d.rank}${d.country}`)
+      .attr("class", d => `${d.country}`)
       .append("path")
-        .attr("class", d => `line country ${d.country}`)
+        .attr("id", d => `${d.country}`)
+        .attr("class", `line`)
         .attr("d", drawPath)
         .attr("fill", "None")
         .attr("stroke", (d) => {
@@ -199,16 +170,46 @@ const tooltip = d3.select("#tooltip")
           })
         .attr("stroke-width", 2)
 
-        .on("mouseover", (data10) => {
-          tooltip
-            .style("opacity", 1)
-            .text(d => `${d.country}`)
-          // return focusColor(data10)
+        .on("mousemove", onMouseOn)
+        .on("mouseout", onMouseOut)
+
+  function onMouseOn(event, d) {
+    tooltip.style("left", event.pageX + 18 + "px")
+      .style("top", event.pageY + 18 + "px")
+      .style("display", "block")
+      .html(`<strong>${d.country}</strong>`);
+
+    // Optional cursor change on target
+    d3.select(event.target)
+    .style("cursor", "crosshair")
+
+    d3.selectAll(`#parallelPlot > g > path`)
+      .data(data10)
+      .transition().duration(250)
+      .attr("stroke", d => event.target.id === d.country ? color(d.country) : "lightgrey")
+      .attr("opacity", d => event.target.id === d.country ? 1 : 0.35)
+      .attr('stroke-width', d => event.target.id === d.country ? 3 : 2 )
+      // .attr("mix-blend-mode", d => event.target.id === d.country ? "normal" : "exclusion")
+  }
+
+  function onMouseOut(event){
+    // Hide tooltip on mouse out
+	  tooltip.style("display", "none"); // Hide toolTip
+
+    // Optional cursor change removed
+    d3.select(event.target)
+      .style("cursor", "default")
+
+    // Reset to default
+	  d3.selectAll(`#parallelPlot > g > path`)
+      .data(data10)
+      .transition().duration(250)
+      .attr("stroke", (d) => {
+          return color(d.country)
           })
-        .on("mouseout", (data10) => {
-           tooltip.style("opacity", 0)
-          // return resetColor(data10)
-          })
+      .attr("opacity", 1)
+      .attr('stroke-width', 2)
+  }
 
  // Axis Groups
   d3.select("#parallelPlot")
