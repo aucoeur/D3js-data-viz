@@ -19,7 +19,7 @@ body {
     background-color: var(--color-dark);
     font-size: calc(10px + 1.5vmin);
     color: var(--color-light);
-    display: flexbox;
+    /* display: flexbox; */
 }
 
 header {
@@ -33,10 +33,10 @@ header {
     justify-content: center;
 }
 
-/* .axis {
-    opacity: 0.75;
-} */
+.line {
+    opacity: 0.5;
+}
 
-.paxis:hover {
+.line:hover {
     opacity: 1;
 }

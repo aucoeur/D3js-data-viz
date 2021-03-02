@@ -2,11 +2,11 @@
 let data10 = data.slice(0, 10)
 const numItems = 10;
 
-const margin = ({top: 20, right: 30, bottom: 30, left: 40})
+const margin = ({top: 20, right: 30, bottom: 30, left: 20})
 const padding = 2;
 const barHeight = 10;
 const width = 500;
-const height = numItems * (barHeight + padding)+ margin.bottom;
+let height = numItems * (barHeight + padding)+ margin.bottom;
 
 const x = d3.scaleLinear()
   .domain([0, 10])
@@ -108,7 +108,7 @@ function showParallelPlot() {
     .domain(data10, (d) => d.country)
     .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"])
 
-  const dimensions = ["gdp", "support", "health", "freedom", "generosity", "corruption", "score"]
+  const dimensions = ["score", "gdp", "support", "health", "freedom", "generosity", "corruption"]
 
   // Build linear scale for each dimension, store in y
   const y = {}
@@ -119,7 +119,7 @@ function showParallelPlot() {
       .domain(
         d3.extent(data10, d => d[key] )
       )
-      .range([height, 0])
+      .range([height-margin.bottom, margin.bottom])
     })
 
   // Build x scale
@@ -128,18 +128,39 @@ function showParallelPlot() {
     .domain(dimensions)
     // .padding(2)
 
-  const topAxis = (d) =>
-    d3.axisLeft()
-    // .tickSize(-(height - margin.top))
-    // .ticks(dimensions.length)
-    .scale(y[d])
-
-
   function drawPath(d) {
     return d3.line()(
       dimensions.map(p => {
-        return [x(p), y[p](d[p])] })
+          return [x(p), y[p](d[p])] })
     )}
+
+  // function focusColor(d) {
+
+  //   // d3.select(`#paths>g:not('#pplot-${selected}')`)
+  //   d3.selectAll(`.line ${selected}'`)
+  //     .transition()
+  //       .duration(200)
+  //       .style("stroke", "lightgrey")
+  //       .style("opacity", "0.2")
+
+  //   d3.selectAll(`.${d.selected}`)
+  //     .transition()
+  //       .duration(200)
+  //       .style("stroke", (d) => color(d.selected))
+  //       .style("opacity", "1")
+  // }
+
+
+  // function resetColor(d) {
+  //   d3.selectAll(".line")
+  //     .transition()
+  //       .duration(200)
+  //       .delay(500)
+  //     .style("stroke", (d) => {
+  //       return color(d.country) })
+  //     .style("opacity", "1")
+  // }
+
 
   const div = d3.select('.main')
     .append("div")
@@ -147,43 +168,74 @@ function showParallelPlot() {
 
   const svg = div.append("svg")
     .attr("id", "parallelPlot")
-    .attr("viewBox", [0, 0, width, height])
+    .attr("viewBox", [0, 0, width, height*2])
+
+  d3.select("#parallelPlot")
+    .append("g")
+      .attr("id", "paths")
+
+const tooltip = d3.select("#tooltip")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "1px")
+    .style("border-radius", "5px")
+    .style("padding", "10px")
 
   // Draw lines!!
-  svg.selectAll("paths")
+  const plotLines = svg.select("#paths")
+    .selectAll("g")
     .data(data10)
-    .join("path")
-      .attr("d", drawPath)
-      .attr("fill", "None")
-      .attr("stroke", (d) => {
+    .join("g")
+      .attr("id", d => `${d.rank}${d.country}`)
+      .append("path")
+        .attr("class", d => `line country ${d.country}`)
+        .attr("d", drawPath)
+        .attr("fill", "None")
+        .attr("stroke", (d) => {
           return color(d.country)
-        })
+          })
+        .attr("stroke-width", 2)
+
+        .on("mouseover", (data10) => {
+          tooltip
+            .style("opacity", 1)
+            .text(d => `${d.country}`)
+          // return focusColor(data10)
+          })
+        .on("mouseout", (data10) => {
+           tooltip.style("opacity", 0)
+          // return resetColor(data10)
+          })
 
  // Axis Groups
   d3.select("#parallelPlot")
     .append("g")
-      .attr("id", "dimensions")
+      .attr("id", "labels")
 
-  // const g = svg.selectAll("#pAxis")
-    .selectAll("g")
-    .data(dimensions)
-    .join("g")
-      .attr("id", (_, i) => dimensions[i])
-      .attr("transform", (d, i) => {
-        return `translate(${margin.left+i}, 0)`
-      })
-      .call(topAxis)
-    // Add axis title
-    .append("text")
-      .style("text-anchor", "middle")
-      .attr("x", (d, i) => {
-        // console.log(width / dimensions.length)
-        return i * (width / dimensions.length)
-      })
-      .attr("y", margin.top)
-      .attr('font-size', `${barHeight-2}px`)
-      .text(d => d)
-        .style("fill", "white")
+  const g = svg.select("#labels")
+    g.selectAll("g")
+      .data(dimensions)
+      .join("g")
+        .attr("id", (_, i) => dimensions[i])
+        .attr("transform", (d, i) => {
+          return `translate(${margin.left+i}, 0)`
+        })
+        // move margin
+        .call((d) => d3.axisLeft())
+      // Add axis title
+      .append("text")
+        .style("text-anchor", "middle")
+        .attr("x", (d, i) => {
+          // console.log(width / dimensions.length)
+          return i * (width / dimensions.length)
+        })
+        .attr("y", margin.top)
+        .attr('font-size', `${barHeight-2}px`)
+        .text(d => d)
+          .style("fill", "white")
 }
 
 showTopTen()
