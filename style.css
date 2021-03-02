@@ -33,10 +33,10 @@ header {
     justify-content: center;
 }
 
-.axis {
-    opacity: 0.4;
-}
+/* .axis {
+    opacity: 0.75;
+} */
 
-.axis:hover {
+.paxis:hover {
     opacity: 1;
 }
