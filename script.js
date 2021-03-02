@@ -25,7 +25,6 @@ const xAxis = g => g
 //   .attr("transform", `translate(${margin.left},0)`)
 //   .call(d3.axisLeft(y))
 
-// TODO: Add axis label
 function showTopTen() {
 
   const xScale = d3
@@ -62,6 +61,7 @@ function showTopTen() {
       .attr("transform", `translate(0, ${height-margin.bottom})`)
       .call(xAxisLines)
 
+  // Janky way for solid stroke x axis bar.. because vertical ticks stroke also janky set to dash lol
   d3.select("#topTen")
     .append("g")
       .call(xAxis)
@@ -69,9 +69,9 @@ function showTopTen() {
   // Bar Groups
   d3.select("#topTen")
     .append("g")
-      .attr("id", "bar")
+      .attr("id", "bars")
 
-  const g = svg.select("#bar")
+  const g = svg.select("#bars")
     .selectAll("g")
     .data(data10)
     .join("g")
@@ -89,6 +89,7 @@ function showTopTen() {
     })
     .attr("height", barHeight)
 
+  // Probably should have set Y axis with rank.. T_T
   g.append("text")
     .text((d) => `${d.rank} - ${d.country} - ${d.score}`)
     .attr("x", 5)
@@ -102,6 +103,44 @@ function showTopTen() {
 }
 
 function showParallelPlot() {
+
+  const colorScale = d3.scaleOrdinal()
+    .domain(data10, (d) => d.country)
+    .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"])
+
+  const dimensions = ["gdp", "support", "health", "freedom", "generosity", "corruption", "score"]
+
+  // Build linear scale for each dimension, store in y
+  const y = {}
+  dimensions.forEach((_, i) => {
+    key = dimensions[i]
+    // console.log(key)
+    y[key] = d3.scaleLinear()
+      .domain(
+        d3.extent(data10, d => d[key] )
+      )
+      .range([height, 0])
+    })
+
+  // Build x scale
+  const x = d3.scalePoint()
+    .range([0, width])
+    .domain(dimensions)
+    .padding(1)
+
+  const topAxis = (d) =>
+    d3.axisLeft()
+    // .tickSize(-(height - margin.top))
+    // .ticks(dimensions.length)
+    .scale(y[d])
+
+
+  function drawPath(d) {
+    return d3.line()(
+      dimensions.map(p => {
+        return [x(p), y[p](d[p])] })
+    )}
+
   const div = d3.select('.main')
     .append("div")
       .attr("id", "parallel")
@@ -110,8 +149,43 @@ function showParallelPlot() {
     .attr("id", "parallelPlot")
     .attr("viewBox", [0, 0, width, height])
 
-  const g = svg.selectAll("g")
-    .data(data10)
+  // Draw lines!!
+  // svg.selectAll("paths")
+  //   .data(data10)
+  //   .append("path")
+  //     .attr("d", drawPath)
+  //       .style("stroke", (d) => {
+  //         return color(d.Species)
+  //       })
+
+ // Axis Groups
+  d3.select("#parallelPlot")
+    .append("g")
+      .attr("id", "dimensions")
+      // .attr("class", "axis")
+      // .attr("stroke-width", ".5")
+
+  // const g = svg.selectAll("#pAxis")
+    .selectAll("g")
+    .data(dimensions)
+    .join("g")
+      .attr("id", (_, i) => dimensions[i])
+      .attr("transform", (d, i) => {
+        return `translate(${margin.left+i}, 0)`
+      })
+      .call(topAxis)
+    // Add axis title
+    .append("text")
+      .style("text-anchor", "middle")
+      .attr("x", (d, i) => {
+        console.log(width / dimensions.length)
+        return i * (width / dimensions.length)
+      })
+      .attr("y", margin.top)
+      .attr('font-size', `${barHeight-2}px`)
+      .text(d => d)
+        .style("fill", "white")
 }
 
 showTopTen()
+showParallelPlot()
