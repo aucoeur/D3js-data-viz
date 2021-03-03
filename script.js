@@ -17,15 +17,23 @@ const xAxis = g => g
   .attr("transform", `translate(0, ${height-margin.bottom})`)
   .call(d3.axisBottom(x))
 
-// const y = d3.scaleLinear()
-//   .domain([0, 1])
-//   .range([height - margin.bottom, margin.top])
-
-// const yAxis = g => g
-//   .attr("transform", `translate(${margin.left},0)`)
-//   .call(d3.axisLeft(y))
+function sortByProperty(data, property) {
+  return data
+    .sort((a, b) => {
+      if (a[property] > b[property] || b[property] == undefined ) {
+        return 1;
+      } else if (a[property] < b[property] || a[property] == undefined) {
+        return -1;
+      }
+      return 0;
+    })
+}
 
 function showTopTen() {
+  const xAxisLines = d3.axisBottom(x)
+      .tickSize(-(height - margin.top))
+      .tickFormat('')
+      .ticks()
 
   const xScale = d3
     .scaleLinear()
@@ -34,11 +42,6 @@ function showTopTen() {
       [0,numItems+2] // accounts for starting the axis at 0
       // d3.extent(data10, (d) => d.score)
     )
-
-  const xAxisLines = d3.axisBottom(x)
-    .tickSize(-(height - margin.top))
-    .tickFormat('')
-    .ticks()
 
   const div = d3.select('.main')
     .append("div")
@@ -117,13 +120,28 @@ function showParallelPlot() {
     key = dimensions[i]
     y[key] = d3.scaleLinear()
       .domain( d3.extent(data10, d => d[key]) )
-      .range([height-margin.bottom, margin.bottom])
+      .range([height-margin.top, margin.bottom])
     })
 
   // Build x scale
   const x = d3.scalePoint()
     .range([margin.left, width-margin.right])
     .domain(dimensions)
+
+  const xAxisLines = d3.axisBottom(x)
+      .tickSize(-(height - margin.top))
+      .tickFormat('')
+      .ticks(7)
+
+  const scores = data10.map((d) => d.score)
+
+  const yAxis = d3.scalePoint()
+    .domain(d3.extent(scores))
+    .range([height-margin.top, margin.bottom])
+
+  // Ordinal scales do not use scale.ticks() because doesn't know which to prioritize for display & relies domain for ticks.. can set with axis.tickValues
+  const yAxisLines = d3.axisLeft(yAxis)
+    // .ticks()
 
   // Function to draw lines across dimensions
   function drawPath(d) {
@@ -137,10 +155,35 @@ function showParallelPlot() {
     .append("div")
       .attr("id", "parallel")
 
+  // Add Header & description
+  div.append("h4")
+    .text("Parallel Plot Across Categories")
+  div.append("small")
+    .text("Hover over for details")
+
   // add svg to this div
   const svg = div.append("svg")
     .attr("id", "parallelPlot")
     .attr("viewBox", [0, 0, width, height*2])
+
+  // Axis & Axis Lines
+  d3.select("#parallelPlot")
+    .append("g")
+      .attr("id", "verticalAxis")
+      .attr("class", "axis")
+      .attr("stroke-width", ".5")
+      .attr("stroke-dasharray", "1,1")
+      .attr("transform", `translate(0, ${height})`)
+      .call(xAxisLines)
+
+ d3.select("#parallelPlot")
+    .append("g")
+      .attr("id", "horizontalAxis")
+      .attr("class", "axis")
+      .attr("stroke-width", "0")
+      .attr("transform", `translate(${margin.right-4})`)
+      .call(yAxisLines)
+        .attr("font-size", "6")
 
   // Group for all paths
   d3.select("#parallelPlot")
@@ -154,12 +197,13 @@ function showParallelPlot() {
 	      .style("position", "absolute")
         .style("display", "none")
 
-  // Draw lines!!
-  // const plotLines = svg.select("#paths")
-  svg.selectAll("g")
+  // Draw path!
+  d3.select('#paths')
+    .selectAll("g")
     .data(data10)
     .join("g")
       .attr("class", d => `${d.country}`)
+      .attr("transform", `translate(0.5, 0)`)
       .append("path")
         .attr("id", d => `${d.country}`)
         .attr("class", `line`)
@@ -174,16 +218,29 @@ function showParallelPlot() {
         .on("mouseout", onMouseOut)
 
   function onMouseOn(event, d) {
+    // TODO: add tooltip that sorts rank per dimension when hover over dimension axis
+
+    // Country tooltip
     tooltip.style("left", event.pageX + 18 + "px")
       .style("top", event.pageY + 18 + "px")
       .style("display", "block")
-      .html(`<strong>${d.country}</strong>`);
+      .html(
+        `<strong>#${d.rank}: ${d.country} </strong><br />
+        Score: ${d.score}<br />
+        GDP: ${d.gdp} <br />
+        Support: ${d.support} <br />
+        Health: ${d.health} <br />
+        Freedom: ${d.freedom} <br />
+        Generosity: ${d.generosity} <br />
+        Corruption: ${d.corruption} <br />
+        `
+        );
 
-    // Optional cursor change on target
+    // Cursor change on target
     d3.select(event.target)
     .style("cursor", "crosshair")
 
-    d3.selectAll(`#parallelPlot > g > path`)
+    d3.selectAll(`#parallelPlot > #paths > g > path`)
       .data(data10)
       .transition().duration(250)
       .attr("stroke", d => event.target.id === d.country ? color(d.country) : "lightgrey")
@@ -196,12 +253,12 @@ function showParallelPlot() {
     // Hide tooltip on mouse out
 	  tooltip.style("display", "none"); // Hide toolTip
 
-    // Optional cursor change removed
+    // Set cursor back to default
     d3.select(event.target)
       .style("cursor", "default")
 
-    // Reset to default
-	  d3.selectAll(`#parallelPlot > g > path`)
+    // Reset styles to default
+	  d3.selectAll(`#parallelPlot > #paths > g > path`)
       .data(data10)
       .transition().duration(250)
       .attr("stroke", (d) => {
@@ -216,6 +273,7 @@ function showParallelPlot() {
     .append("g")
       .attr("id", "labels")
 
+  // top labels
   const g = svg.select("#labels")
     g.selectAll("g")
       .data(dimensions)
@@ -231,9 +289,9 @@ function showParallelPlot() {
         .style("text-anchor", "middle")
         .attr("x", (d, i) => {
           // console.log(width / dimensions.length)
-          return i * (width / dimensions.length)
+          return i * ((width+margin.left) / dimensions.length)
         })
-        .attr("y", margin.top)
+        .attr("y", margin.top-5)
         .attr('font-size', `${barHeight-2}px`)
         .text(d => d)
           .style("fill", "white")
