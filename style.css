@@ -33,14 +33,9 @@ header {
     justify-content: center;
 }
 
-/* .line {
-    opacity: 0.5;
+text {
+    pointer-events: none;
 }
-
-.line:hover .active:hover {
-    opacity: 1;
-} */
-
 .tooltip {
   position: absolute;
   display: none;
