@@ -1,5 +1,7 @@
 # FEW 2.5 Data Visualization Final Assessment
 
+
+## Description
 Your job is to present a report on world happiness. Use the data from the world happiness report on Kaggle: 
 
 https://www.kaggle.com/unsdsn/world-happiness
@@ -79,5 +81,3 @@ To solve a harder problem try to answer these questions:
 - Is family or GDP a bigger influence on happiness? 
 - Are free people healthier?
 - Are countries that trust their government more productive? 
-
-
